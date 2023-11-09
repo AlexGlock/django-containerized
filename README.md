@@ -5,8 +5,9 @@ This setup can be run with Docker or Podman (no comercial license-limitation).
 
 ## The podman setup ##
 
-Your system needs
+Your system needs ``podman`` or ``docker`` and ``gunicorn``
 
+    sudo apt-get install gunicorn
     sudo apt-get install podman
     sudo apt install podman-compose
     # if apt is not working build it with python/pip3
