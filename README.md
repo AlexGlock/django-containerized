@@ -20,5 +20,8 @@ Autodeploy the dev-server in the project directory using Podman
 Autodeploy the dev-server using Docker (if installed)
 
     docker compose up --build
+    # you can also build and launch in two steps:
+    docker compose build
+    docker compose up
 
 The first invocation will take a while because the image needs to be build from scratch.

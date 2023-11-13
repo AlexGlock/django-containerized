@@ -3,7 +3,7 @@ version: '3'
 services:
   web:
     restart: always
-    build: .
+    build: ./web
     expose:
       - "8000"
 #    links:
@@ -12,7 +12,6 @@ services:
     volumes:
       - web-django:/usr/src/app
       - web-static:/usr/src/app/static
-      - web-media:/usr/src/app/static
 #    env_file: .env
     environment:
       DEBUG: 'true'
@@ -24,7 +23,7 @@ services:
     ports:
       - "80:80"
     volumes:
-      - web-static:/www/static
+      - web-static:/usr/src/app/static
     links:
       - web:web
 
@@ -47,6 +46,5 @@ services:
 volumes:
   web-django:
   web-static:
-  web-media:
 #  pgdata:
 #  redisdata:
