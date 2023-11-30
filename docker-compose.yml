@@ -1,21 +1,18 @@
 version: '3'
 
 services:
+
   web:
     restart: always
     build: ./web
     expose:
       - "8000"
-#    links:
-#      - postgres:postgres
-#      - redis:redis
+      - "587"
     volumes:
-      - web-django:/usr/src/app
-      - web-static:/usr/src/app/static
-#    env_file: .env
+      - web-static:/static
+      - web-media:/media    
     environment:
       DEBUG: 'true'
-    command: /usr/local/bin/gunicorn django_podman.wsgi:application -w 2 -b :8000
 
   nginx:
     restart: always
@@ -24,27 +21,20 @@ services:
       - "80:80"
     volumes:
       - web-static:/usr/src/app/static
+      - web-media:/usr/src/app/media
+      - web-label:/usr/src/app/label
     links:
-      - web:web
+      - web
+      - cups
 
-#  postgres:
-#    restart: always
-#    image: postgres:latest
-#    ports:
-#      - "5432:5432"
-#    volumes:
-#      - pgdata:/var/lib/postgresql/data/
+  # a integrated cups-server 
+  cups:
+    restart: always
+    build: ./cups/
+    ports:
+      - "631:631"
 
-#  redis:
-#    restart: always
-#    image: redis:latest
-#    ports:
-#      - "6379:6379"
-#    volumes:
-#      - redisdata:/data
 
 volumes:
-  web-django:
   web-static:
-#  pgdata:
-#  redisdata:
+  web-media:

@@ -1,27 +1,94 @@
-# automated django deployment #
+<img src="django-compose.png" alt="404" width="600" height="200">
 
-This Repo contains a setup with ``Dockerfile`` and ``docker-compose.yml`` which should allow a containerized auto-deploy for the Django App.
-This setup can be run with Docker or Podman (no comercial license-limitation).
+## ein Template für containerisierte Django apps ##
 
-## The podman setup ##
+Für ``docker-compose`` funktioniert das Projekt out of the box, bei der Migration
+zu ``podman-compose`` müssen durch die rootless pods noch einige Konfigurationen an der Servermaschine vorgenommen werden.
 
-Your system needs ``podman`` or ``docker`` and ``gunicorn``
+## ``Podman`` und ``podman-compose`` installieren:
+ 
+    apt-get install podman
+    apt-get install podman-compose
 
-    sudo apt-get install gunicorn
-    sudo apt-get install podman
-    sudo apt install podman-compose
-    # if apt is not working build it with python/pip3
-    sudo pip3 install podman-compose
+das podman-compose paket ist nur bei neuen Distros verfügbar bei älteren Distros muss es über python pip installiert werden:
 
-Autodeploy the dev-server in the project directory using Podman
+    apt-get install python3-pip
+    pip3 install podman-compose
 
-    podman-compose up --build
+Docker registries einfügen in ``/etc/containers/registries.conf``:
 
-Autodeploy the dev-server using Docker (if installed)
+    unqualified-search-registries = ["docker.io"]
 
-    docker compose up --build
-    # you can also build and launch in two steps:
-    docker compose build
-    docker compose up
+## Einem (nicht root) Nutzer Rechte für permanent laufende Container geben
 
-The first invocation will take a while because the image needs to be build from scratch.
+    sudo loginctl enable-linger <USERNAME>
+
+Eine port config für die pods erstellen:
+
+    sudo -e /etc/sysctl.d/podman-privileged-ports.conf
+
+und folgende Einträge für ``HTTP``, ``HTTPS`` und ``CUPS`` in diese config einfügen:
+
+    net.ipv4.ip_unprivileged_port_start=80
+
+
+Setting permanent machen:
+
+    sudo sysctl --load /etc/sysctl.d/podman-privileged-ports.conf
+
+Öffnen der Firewall an diesen Ports (wenn FW vorhanden):
+
+    sudo ufw allow 80,443,631/tcp comment Podman-Containers
+
+
+
+## wichtige Commands 
+
+aktuellen Stand der Servermaschine prüfen:
+
+    # zeigt alle (laufenden) container
+    podman-compose container ls
+    # zeigt alle gebauten images
+    podman-compose image list
+
+Das Projekt initialisieren (auf oberster Projektebene ausführen):
+
+    # Images bauen (dauert lang)
+    podman-compose build
+    # container starten
+    podman-compose up -d 
+
+Nützliches:
+
+    # container im Vordergrund starten mit auto remove
+    podman-compose up && podman-compose rm -fsv
+    # system bereinigen
+    podman image prune
+    podman container prune
+    podman system prune
+    # interaktives terminal in laufendem container
+    podman exec -it <CONTAINERID> bash
+
+
+## Development Server
+
+Durch das Docker compose setup wir es schwieriger am Quellcode der Webapp zu arbeiten.
+Deshalb hier ein kleines Tutorial für die Benutzung des Dev-server:
+
+Zunächst python venv aufsetzen (directory egal):
+
+    python3 -m venv <VENVNAME>
+    # venv aktivieren
+    source <PATHTOVENV>/bin/activate
+    # requirements aus web-ordner installieren
+    pip install -r requirements.txt
+
+Django Development Server starten (aktiviertes VENV in dir WEB)
+
+    python manage.py runserver <HOSTNAME>.local:8000
+
+Wenn eine Datenbank/ staticfiles benötigt werden:
+
+    python manage.py migrate
+    python manage.py collectstatic
+
